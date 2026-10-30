@@ -1,0 +1,56 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22.22.3'
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test -- --watch=false
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Build and test static site with the repository base path
+        env:
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+        run: |
+          export PAGES_BASE_HREF="${PAGES_BASE_PATH}/"
+          npm run test:pages
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist/github-pages/browser
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy site
+        id: deployment
+        uses: actions/deploy-pages@v4

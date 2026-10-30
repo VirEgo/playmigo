@@ -1,0 +1,150 @@
+<main class="quiz-shell" lang="ca-valencia">
+  <header class="quiz-header">
+    <div class="heading-copy">
+      <p class="subject">VOCABULARI · VALENCIÀ</p>
+      <h1>Un viatge pel món dels animals</h1>
+    </div>
+    @if (quiz.total()) {
+      <button class="restart-button" type="button" (click)="quiz.restart()">
+        <svg lucideRotateCcw aria-hidden="true"></svg>Tornar a començar
+      </button>
+    }
+  </header>
+  <app-training-modes label="Mode d’entrenament" />
+  @if (!quiz.total()) {
+    <section class="quiz-card empty-state" aria-labelledby="pending-title">
+      <div class="animal-symbol"><svg lucidePawPrint aria-hidden="true"></svg></div>
+      <h2 id="pending-title">Els animals t’esperen!</h2>
+      <p>Pròximament podràs practicar amb les imatges dels animals.</p>
+      <p class="hint">Mira la imatge, tria un dels tres noms i comprova la resposta.</p>
+    </section>
+  } @else if (quiz.session().phase === 'completed') {
+    <section class="quiz-card results-card" aria-labelledby="results-title">
+      <div class="animal-symbol"><svg lucideTrophy aria-hidden="true"></svg></div>
+      <h2 id="results-title">Has completat el repte!</h2>
+      <p>
+        {{
+          quiz.percent() >= 70
+            ? 'Molt bé! Coneixes molts animals!'
+            : 'Bon treball! Cada intent t’ajuda a aprendre.'
+        }}
+      </p>
+      <div class="results-score" aria-label="Els teus resultats">
+        <div>
+          <strong>{{ quiz.correct() }}</strong
+          ><span>Encerts</span>
+        </div>
+        <div>
+          <strong>{{ quiz.total() - quiz.correct() }}</strong
+          ><span>Per practicar</span>
+        </div>
+        <div>
+          <strong>{{ quiz.percent() }}%</strong><span>d’encerts</span>
+        </div>
+      </div>
+      <button class="primary-button" type="button" (click)="quiz.restart()">
+        <svg lucideRotateCcw aria-hidden="true"></svg>Tornar a començar
+      </button>
+    </section>
+  } @else {
+    <div class="progress-labels">
+      <p data-testid="question-number">
+        Pregunta {{ quiz.session().index + 1 }} de {{ quiz.total() }}
+      </p>
+      <p data-testid="score">
+        Encerts: <strong>{{ quiz.correct() }}</strong>
+      </p>
+    </div>
+    <div
+      class="progress-track"
+      role="progressbar"
+      aria-label="Progrés del repte"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      [attr.aria-valuenow]="quiz.progress()"
+    >
+      <div class="progress-fill" [style.width.%]="quiz.progress()"></div>
+    </div>
+    @if (quiz.question(); as question) {
+      @if (quiz.animal(); as animal) {
+        <section class="quiz-card" aria-labelledby="question-title">
+          <p class="instruction">Mira la imatge i tria el nom en valencià.</p>
+          <h2 id="question-title">Quin animal és?</h2>
+          <div class="animal-picture">
+            @if (failedImage() === animal.id) {
+              <p role="alert">
+                No s’ha pogut carregar la imatge. Torna a carregar la pàgina per a intentar-ho de
+                nou.
+              </p>
+            } @else {
+              @for (illustration of [animal]; track illustration.id) {
+                <img
+                  [src]="illustration.image"
+                  [alt]="
+                    quiz.session().phase === 'checked'
+                      ? illustration.name
+                      : 'Animal per identificar'
+                  "
+                  width="320"
+                  height="240"
+                  fetchpriority="high"
+                  animate.enter="animal-enter"
+                  (error)="failedImage.set(illustration.id)"
+                />
+              }
+            }
+          </div>
+          <app-answer-options
+            [options]="question.options"
+            [selected]="quiz.session().selected"
+            [locked]="quiz.session().phase === 'checked' || failedImage() === animal.id"
+            [correctAnswer]="quiz.session().phase === 'checked' ? animal.name : null"
+            correctLabel="Resposta correcta"
+            incorrectLabel="La teua resposta"
+            label="Tria una resposta"
+            (choose)="quiz.select($event)"
+          />
+          <div aria-live="polite" aria-atomic="true">
+            @if (quiz.session().phase === 'checked') {
+              <div
+                class="feedback"
+                [class.incorrect]="quiz.session().selected !== animal.name"
+                data-testid="feedback"
+              >
+                <p>
+                  {{
+                    quiz.session().selected === animal.name
+                      ? 'Molt bé!'
+                      : 'No passa res! La resposta correcta és'
+                  }}
+                  <strong>{{ animal.name }}.</strong>
+                </p>
+                <p class="animal-group">{{ animal.group }}</p>
+              </div>
+            }
+          </div>
+          <div class="card-actions">
+            <button
+              class="primary-button"
+              type="button"
+              [disabled]="quiz.session().selected === null || failedImage() === animal.id"
+              (click)="quiz.session().phase === 'checked' ? quiz.next() : quiz.check()"
+            >
+              @if (quiz.session().phase === 'answering') {
+                <svg lucideCheck aria-hidden="true"></svg>Comprovar resposta
+              } @else {
+                {{
+                  quiz.session().index === quiz.total() - 1
+                    ? 'Veure els resultats'
+                    : 'Següent animal'
+                }}
+                <svg lucideArrowRight aria-hidden="true"></svg>
+              }
+            </button>
+          </div>
+        </section>
+      }
+    }
+  }
+  <footer>Mira · Pensa · Aprén</footer>
+</main>

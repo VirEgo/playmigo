@@ -1,0 +1,78 @@
+:host {
+  display: block;
+}
+.operation-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0 30px;
+}
+.written-operation {
+  --digit-width: 72px;
+  width: calc(32px + var(--digits) * var(--digit-width));
+  max-width: 100%;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-size: 52px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.places,
+.operand,
+.result-line {
+  display: grid;
+  grid-template-columns: 32px repeat(var(--digits), minmax(0, 1fr));
+  text-align: center;
+}
+.places {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--teal);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.operand {
+  padding: 1px 0;
+}
+.operator {
+  font-size: 36px;
+  align-self: center;
+}
+.result-line {
+  margin-top: 8px;
+  border-top: 3px solid var(--outline);
+  padding-top: 6px;
+  color: #5b7779;
+  min-height: 74px;
+}
+.revealed {
+  color: var(--teal);
+}
+.division {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  text-align: center;
+}
+.dividend {
+  padding: 0 13px;
+}
+.divisor {
+  border-left: 3px solid var(--outline);
+  padding: 0 13px;
+}
+.quotient {
+  grid-column: 2;
+  border-left: 3px solid var(--outline);
+  border-top: 3px solid var(--outline);
+  padding-top: 6px;
+}
+@media (max-width: 599px) {
+  .written-operation {
+    --digit-width: 66px;
+    font-size: 46px;
+  }
+  .result-line {
+    min-height: 66px;
+  }
+  .operation-wrap {
+    margin-bottom: 26px;
+  }
+}
