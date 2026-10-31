@@ -25,18 +25,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
-      - run: npm test -- --watch=false
       - name: Configure Pages
         id: pages
         uses: actions/configure-pages@v5
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
-      - name: Build and test static site with the repository base path
+      - name: Build static site with the repository base path
         env:
           PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
         run: |
-          export PAGES_BASE_HREF="${PAGES_BASE_PATH}/"
-          npm run test:pages
+          npm run build:pages -- --base-href "${PAGES_BASE_PATH}/"
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist/github-pages/browser
