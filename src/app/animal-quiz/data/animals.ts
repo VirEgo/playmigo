@@ -17,7 +17,7 @@ const ANIMAL_VOCABULARY: readonly Omit<Animal, 'image'>[] = [
   { id: 'cavall', name: 'el cavall', group: 'Mamífers' },
   { id: 'dofi', name: 'el dofí', group: 'Mamífers' },
   { id: 'elefant', name: 'l’elefant', group: 'Mamífers' },
-  { id: 'ardilla', name: 'l’ardilla', group: 'Mamífers' },
+  { id: 'ardilla', name: 'l’esquirol', group: 'Mamífers' },
   { id: 'ratoli', name: 'el ratolí', group: 'Mamífers' },
   { id: 'erico', name: 'l’eriçó', group: 'Mamífers' },
   { id: 'balena', name: 'la balena', group: 'Mamífers' },
@@ -49,7 +49,7 @@ const ANIMAL_VOCABULARY: readonly Omit<Animal, 'image'>[] = [
   { id: 'serp', name: 'la serp', group: 'Rèptils' },
   {
     id: 'llangardaix',
-    name: 'el llangardaix',
+    name: 'el fardatxo',
     group: 'Rèptils',
   },
   { id: 'cocodril', name: 'el cocodril', group: 'Rèptils' },
@@ -60,6 +60,7 @@ const ANIMAL_VOCABULARY: readonly Omit<Animal, 'image'>[] = [
   { id: 'salamandra', name: 'la salamandra', group: 'Amfibis' },
   { id: 'trito', name: 'el tritó', group: 'Amfibis' },
   { id: 'axolot', name: 'l’axolot', group: 'Amfibis' },
+  { id: 'cullerot', name: 'el cullerot', group: 'Amfibis' },
   { id: 'formiga', name: 'la formiga', group: 'Invertebrats' },
   { id: 'marieta', name: 'la marieta', group: 'Invertebrats' },
   { id: 'abella', name: 'l’abella', group: 'Invertebrats' },
@@ -128,9 +129,9 @@ const ANIMAL_VOCABULARY: readonly Omit<Animal, 'image'>[] = [
   { id: 'poll', name: 'el poll', group: 'Invertebrats' },
 ];
 
-// Temporarily use only the original poster's 55 animals for testing.
+// Use the original poster's 55 animals plus the tadpole.
 // Keep the 37 later additions and their illustrations available for re-enabling.
-const ACTIVE_ANIMAL_COUNT = 55;
+const ACTIVE_ANIMAL_COUNT = 56;
 
 export const ANIMALS: readonly Animal[] = ANIMAL_VOCABULARY.slice(0, ACTIVE_ANIMAL_COUNT).map(
   (animal) => ({

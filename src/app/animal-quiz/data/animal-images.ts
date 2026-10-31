@@ -43,6 +43,7 @@ export const ANIMAL_IMAGES: Readonly<Record<string, string>> = {
   salamandra: 'animales/amfibis_3.png',
   trito: 'animales/amfibis_4.png',
   axolot: 'animales/amfibis_5.png',
+  cullerot: 'animales/amfibis_6.png',
   formiga: 'animales/invertebrats_1.png',
   marieta: 'animales/invertebrats_2.png',
   abella: 'animales/invertebrats_3.png',
