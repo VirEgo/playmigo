@@ -22,10 +22,10 @@ describe('AnimalQuiz', () => {
 
   afterEach(() => vi.restoreAllMocks());
 
-  it('chooses 30 distinct animals from the catalog with three names in each group', () => {
+  it('includes all 55 distinct animals from the catalog with three names in each group', () => {
     const questions = generateAnimalQuestions(ANIMALS);
-    expect(questions).toHaveLength(30);
-    expect(new Set(questions.map((question) => question.id)).size).toBe(30);
+    expect(questions).toHaveLength(55);
+    expect(new Set(questions.map((question) => question.id)).size).toBe(55);
     for (const question of questions) {
       const animal = ANIMALS.find((entry) => entry.id === question.id)!;
       expect(new Set(question.options).size).toBe(3);
@@ -44,8 +44,8 @@ describe('AnimalQuiz', () => {
     expect(first).not.toEqual(second);
   });
 
-  it('keeps an existing 30-question session after expanding the catalog', () => {
-    const questions = generateAnimalQuestions(ANIMALS.slice(0, 55));
+  it('keeps a full session and rejects an incomplete catalog', () => {
+    const questions = generateAnimalQuestions(ANIMALS);
     const session = {
       version: 1,
       questions,
@@ -56,37 +56,29 @@ describe('AnimalQuiz', () => {
     };
     expect(validateAnimalSession(session, ANIMALS)).toEqual(session);
     expect(
-      validateAnimalSession({ ...session, questions: questions.slice(0, 29) }, ANIMALS),
+      validateAnimalSession({ ...session, questions: questions.slice(0, 30) }, ANIMALS),
     ).toBeNull();
   });
 
-  it('migrates legacy 55-question sessions without losing answers within the new limit', () => {
-    const questions = ANIMALS.slice(0, 55).flatMap((animal) => generateAnimalQuestions([animal]));
-    const early = {
+  it('restores progress beyond question 30 and full completion without truncating', () => {
+    const questions = generateAnimalQuestions(ANIMALS);
+    const inProgress = {
       version: 1,
       questions,
-      index: 2,
-      selected: questions[2].options[0],
-      answers: questions.slice(0, 2).map((question) => question.options[0]),
-      phase: 'answering',
-    };
-    expect(validateAnimalSession(early, ANIMALS)).toEqual({
-      ...early,
-      questions: questions.slice(0, 30),
-    });
-    const late = {
-      ...early,
       index: 34,
       selected: null,
       answers: questions.slice(0, 34).map((question) => question.options[0]),
+      phase: 'answering',
     };
-    const migrated = validateAnimalSession(late, ANIMALS)!;
-    expect(migrated.phase).toBe('completed');
-    expect(migrated.index).toBe(29);
-    expect(migrated.questions).toHaveLength(30);
-    expect(migrated.answers).toEqual(late.answers.slice(0, 30));
-    expect(migrated.selected).toBe(late.answers[29]);
-    expect(validateAnimalSession(migrated, ANIMALS)).toEqual(migrated);
+    expect(validateAnimalSession(inProgress, ANIMALS)).toEqual(inProgress);
+    const completed = {
+      ...inProgress,
+      index: 54,
+      selected: questions[54].options[0],
+      answers: questions.map((question) => question.options[0]),
+      phase: 'completed',
+    };
+    expect(validateAnimalSession(completed, ANIMALS)).toEqual(completed);
   });
 
   it('requires a valid selection, checks once and locks the answer', () => {

@@ -10,7 +10,7 @@ test('shows transparent illustrations with a silhouette shadow and animates each
 }) => {
   const errors = captureErrors(page);
   await page.goto('/animals');
-  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 30');
+  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 55');
   const session = await readSession(page);
   const first = ANIMALS.find((entry) => entry.id === session.questions[0].id)!;
   const next = ANIMALS.find((entry) => entry.id === session.questions[1].id)!;
@@ -60,7 +60,7 @@ test('changes animals without motion when reduced motion is enabled', async ({ p
   const errors = captureErrors(page);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/animals');
-  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 30');
+  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 55');
   const session = await readSession(page);
   const first = ANIMALS.find((entry) => entry.id === session.questions[0].id)!;
   await expectAnimalImage(page, first.id);

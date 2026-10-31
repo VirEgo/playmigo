@@ -23,7 +23,7 @@ for (const width of [1440, 390]) {
     await page.getByRole('link', { name: 'Animals · Valencià' }).click();
     await expect(page).toHaveURL(`${baseURL}animals`);
     await expect(page).toHaveTitle('Un viatge pel món dels animals · Valencià');
-    await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 30');
+    await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 55');
     await expectAnimalImage(page, (await readSession(page)).questions[0].id);
     const image = page.locator('.animal-picture img');
     expect(await image.evaluate((img: HTMLImageElement) => img.src)).toContain(

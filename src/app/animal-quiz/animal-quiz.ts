@@ -2,8 +2,6 @@ import { computed, inject, Injectable, InjectionToken, signal } from '@angular/c
 import { ANIMALS, Animal } from './data/animals';
 
 export const ANIMAL_STORAGE_KEY = 'animal-quiz-session-v1';
-export const ANIMAL_QUESTION_LIMIT = 30;
-const LEGACY_ANIMAL_QUESTION_COUNT = 55;
 export const ANIMAL_QUIZ_CATALOG = new InjectionToken<readonly Animal[]>('Animal quiz images', {
   providedIn: 'root',
   factory: () => ANIMALS.filter((animal) => !!animal.image),
@@ -36,25 +34,23 @@ export function generateAnimalQuestions(
   animals: readonly Animal[],
   random: () => number = Math.random,
 ): readonly AnimalQuestion[] {
-  return shuffled(animals, random)
-    .slice(0, ANIMAL_QUESTION_LIMIT)
-    .map((animal) => {
-      const alternatives = ANIMALS.filter(
-        (other) => other.id !== animal.id && other.group === animal.group,
-      );
-      return {
-        id: animal.id,
-        options: shuffled(
-          [
-            animal.name,
-            ...shuffled(alternatives, random)
-              .slice(0, 2)
-              .map((other) => other.name),
-          ],
-          random,
-        ),
-      };
-    });
+  return shuffled(animals, random).map((animal) => {
+    const alternatives = ANIMALS.filter(
+      (other) => other.id !== animal.id && other.group === animal.group,
+    );
+    return {
+      id: animal.id,
+      options: shuffled(
+        [
+          animal.name,
+          ...shuffled(alternatives, random)
+            .slice(0, 2)
+            .map((other) => other.name),
+        ],
+        random,
+      ),
+    };
+  });
 }
 
 function initialSession(animals: readonly Animal[]): AnimalSession {
@@ -80,9 +76,7 @@ export function validateAnimalSession(
     !record(value) ||
     value['version'] !== 1 ||
     !Array.isArray(value['questions']) ||
-    (value['questions'].length !== Math.min(ANIMAL_QUESTION_LIMIT, animals.length) &&
-      value['questions'].length !== animals.length &&
-      value['questions'].length !== LEGACY_ANIMAL_QUESTION_COUNT) ||
+    value['questions'].length !== animals.length ||
     animals.length === 0 ||
     !Array.isArray(value['answers']) ||
     !Number.isInteger(value['index'])
@@ -136,22 +130,9 @@ export function validateAnimalSession(
     )
       return null;
   } else return null;
-  // Older sessions included the entire catalog. Preserve their first 30 questions
-  // and answers, including completed progress beyond the new limit.
-  const total = Math.min(ANIMAL_QUESTION_LIMIT, animals.length);
-  if (index >= total) {
-    return {
-      version: 1,
-      questions: questions.slice(0, total),
-      index: total - 1,
-      selected: answers[total - 1] as string,
-      answers: answers.slice(0, total) as string[],
-      phase: 'completed',
-    };
-  }
   return {
     version: 1,
-    questions: questions.slice(0, total),
+    questions,
     index,
     selected: selected as string | null,
     answers: answers as string[],

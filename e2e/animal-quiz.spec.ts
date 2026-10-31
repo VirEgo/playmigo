@@ -16,7 +16,7 @@ test('switches modes and preserves both independent sessions', async ({ page }) 
     'aria-current',
     'page',
   );
-  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 30');
+  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 55');
   await expectAnimalImage(page, (await readSession(page)).questions[0].id);
   await page.locator('.answer').first().click();
   await page.getByRole('button', { name: 'Comprovar resposta' }).click();
@@ -36,7 +36,7 @@ test('switches modes and preserves both independent sessions', async ({ page }) 
 test('selects, changes, restores, checks once, advances and restarts', async ({ page }) => {
   const errors = captureErrors(page);
   await page.goto('/animals');
-  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 30');
+  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 55');
   const original = await readSession(page);
   const animal = ANIMALS.find((entry) => entry.id === original.questions[0].id)!;
   await expectAnimalImage(page, animal.id);
@@ -66,28 +66,35 @@ test('selects, changes, restores, checks once, advances and restarts', async ({ 
   await expect(page.getByTestId('score')).toHaveText('Encerts: 1');
   expect((await readSession(page)).answers).toHaveLength(1);
   await page.getByRole('button', { name: 'Següent animal' }).click();
-  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 2 de 30');
+  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 2 de 55');
   await expectAnimalImage(page, original.questions[1].id);
   await expect(page.getByRole('button', { name: 'Comprovar resposta' })).toBeDisabled();
   await page.getByRole('button', { name: 'Tornar a començar' }).click();
-  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 30');
+  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 55');
   await expect(page.getByTestId('score')).toHaveText('Encerts: 0');
-  expect((await readSession(page)).answers).toEqual([]);
+  const restarted = await readSession(page);
+  expect(restarted.answers).toEqual([]);
+  expect(restarted.questions.map((question) => question.id).sort()).toEqual(
+    ANIMALS.map((animal) => animal.id).sort(),
+  );
+  expect(restarted.questions.map((question) => question.id)).not.toEqual(
+    original.questions.map((question) => question.id),
+  );
   expect(errors).toEqual([]);
 });
 
-test('completes exactly 30 questions, checks mixed answers and restores final results', async ({
+test('completes all 55 questions, checks mixed answers and restores final results', async ({
   page,
 }) => {
   test.setTimeout(120000);
   const errors = captureErrors(page);
   await page.goto('/animals');
-  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 30');
+  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 55');
   const session = await readSession(page);
-  expect(new Set(session.questions.map((question) => question.id)).size).toBe(30);
+  expect(new Set(session.questions.map((question) => question.id)).size).toBe(55);
   for (const [index, question] of session.questions.entries()) {
     const animal = ANIMALS.find((entry) => entry.id === question.id)!;
-    await expect(page.getByTestId('question-number')).toHaveText(`Pregunta ${index + 1} de 30`);
+    await expect(page.getByTestId('question-number')).toHaveText(`Pregunta ${index + 1} de 55`);
     await expectAnimalImage(page, animal.id);
     await expect(
       page.getByRole('group', { name: 'Tria una resposta' }).getByRole('button'),
@@ -107,13 +114,13 @@ test('completes exactly 30 questions, checks mixed answers and restores final re
   }
   await expect(page.getByRole('heading', { name: 'Has completat el repte!' })).toBeVisible();
   const results = page.locator('.results-score');
-  await expect(results).toContainText('24Encerts');
-  await expect(results).toContainText('6Per practicar');
+  await expect(results).toContainText('44Encerts');
+  await expect(results).toContainText('11Per practicar');
   await expect(results).toContainText('80%');
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Has completat el repte!' })).toBeVisible();
   await page.locator('.results-card').getByRole('button', { name: 'Tornar a començar' }).click();
-  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 30');
+  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 55');
   expect(errors).toEqual([]);
 });
 
@@ -128,47 +135,43 @@ test('loads only the original 55 animals with their Valencian names and three an
   expect(new Set(ANIMALS.map((animal) => animal.id)).size).toBe(55);
   expect(new Set(ANIMALS.map((animal) => animal.image)).size).toBe(55);
   await page.goto('/animals');
-  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 30');
+  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 55');
 
-  for (let offset = 0; offset < ANIMALS.length; offset += 30) {
-    const targets = ANIMALS.slice(offset, offset + 30);
-    const bank = [...targets, ...ANIMALS.slice(0, 30 - targets.length)];
-    const questions = bank.map((animal) => ({
-      id: animal.id,
-      options: [
-        animal.name,
-        ...ANIMALS.filter((other) => other.group === animal.group && other.id !== animal.id)
-          .slice(0, 2)
-          .map((other) => other.name),
-      ],
-    }));
-    await page.evaluate((questions) => {
-      localStorage.setItem(
-        'animal-quiz-session-v1',
-        JSON.stringify({
-          version: 1,
-          questions,
-          index: 0,
-          selected: null,
-          answers: [],
-          phase: 'answering',
-        }),
-      );
-    }, questions);
-    await page.reload();
-    for (const [index, animal] of targets.entries()) {
-      await expect(page.getByTestId('question-number')).toHaveText(`Pregunta ${index + 1} de 30`);
-      await expectAnimalImage(page, animal.id);
-      await expect(
-        page.getByRole('group', { name: 'Tria una resposta' }).getByRole('button'),
-      ).toHaveCount(3);
-      await page.getByRole('button', { name: animal.name, exact: true }).click();
-      await page.getByRole('button', { name: 'Comprovar resposta' }).click();
-      await expect(page.getByTestId('feedback')).toContainText(animal.name);
-      await expect(page.locator('.answer.correct')).toContainText(animal.name);
-      if (index + 1 < targets.length)
-        await page.getByRole('button', { name: 'Següent animal' }).click();
-    }
+  const questions = ANIMALS.map((animal) => ({
+    id: animal.id,
+    options: [
+      animal.name,
+      ...ANIMALS.filter((other) => other.group === animal.group && other.id !== animal.id)
+        .slice(0, 2)
+        .map((other) => other.name),
+    ],
+  }));
+  await page.evaluate((questions) => {
+    localStorage.setItem(
+      'animal-quiz-session-v1',
+      JSON.stringify({
+        version: 1,
+        questions,
+        index: 0,
+        selected: null,
+        answers: [],
+        phase: 'answering',
+      }),
+    );
+  }, questions);
+  await page.reload();
+  for (const [index, animal] of ANIMALS.entries()) {
+    await expect(page.getByTestId('question-number')).toHaveText(`Pregunta ${index + 1} de 55`);
+    await expectAnimalImage(page, animal.id);
+    await expect(
+      page.getByRole('group', { name: 'Tria una resposta' }).getByRole('button'),
+    ).toHaveCount(3);
+    await page.getByRole('button', { name: animal.name, exact: true }).click();
+    await page.getByRole('button', { name: 'Comprovar resposta' }).click();
+    await expect(page.getByTestId('feedback')).toContainText(animal.name);
+    await expect(page.locator('.answer.correct')).toContainText(animal.name);
+    if (index + 1 < ANIMALS.length)
+      await page.getByRole('button', { name: 'Següent animal' }).click();
   }
   expect(errors).toEqual([]);
 });
@@ -178,7 +181,7 @@ for (const disabledEntry of ['question', 'option']) {
     page,
   }) => {
     const errors = captureErrors(page);
-    const questions = ANIMALS.slice(0, 30).map((animal) => ({
+    const questions = ANIMALS.map((animal) => ({
       id: animal.id,
       options: [
         animal.name,
@@ -206,9 +209,9 @@ for (const disabledEntry of ['question', 'option']) {
       );
     }, questions);
     await page.goto('/animals');
-    await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 30');
+    await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 55');
     const saved = await readSession(page);
-    expect(saved.questions).toHaveLength(30);
+    expect(saved.questions).toHaveLength(55);
     for (const question of saved.questions) {
       expect(ANIMALS.some((animal) => animal.id === question.id)).toBe(true);
       for (const option of question.options) {
@@ -230,7 +233,7 @@ test('reveals the correct option after a mistake, preserves it on reload and cle
 }) => {
   const errors = captureErrors(page);
   await page.goto('/animals');
-  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 30');
+  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 55');
   const session = await readSession(page);
   const animal = ANIMALS.find((entry) => entry.id === session.questions[0].id)!;
   const wrong = session.questions[0].options.find((option) => option !== animal.name)!;
@@ -252,15 +255,16 @@ test('reveals the correct option after a mistake, preserves it on reload and cle
   await expect(page.locator('.answer.incorrect')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.answer.correct')).toBeDisabled();
   await page.getByRole('button', { name: 'Següent animal' }).click();
-  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 2 de 30');
+  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 2 de 55');
   await expect(page.locator('.answer.correct, .answer.incorrect')).toHaveCount(0);
   await expect(page.getByTestId('feedback')).toHaveCount(0);
   expect((await readSession(page)).answers).toEqual([wrong]);
   expect(errors).toEqual([]);
 });
 
-test('caps an existing long session at 30 and retains its completed answers', async ({ page }) => {
-  const questions = ANIMALS.slice(0, 55).map((animal) => ({
+test('restarts an old 30-question session with all 55 animals', async ({ page }) => {
+  const errors = captureErrors(page);
+  const questions = ANIMALS.slice(0, 30).map((animal) => ({
     id: animal.id,
     options: [
       animal.name,
@@ -269,28 +273,26 @@ test('caps an existing long session at 30 and retains its completed answers', as
         .map((entry) => entry.name),
     ],
   }));
-  const legacy = {
-    version: 1,
-    questions,
-    index: 31,
-    selected: null,
-    answers: ANIMALS.slice(0, 31).map((animal) => animal.name),
-    phase: 'answering',
-  };
-  await page.addInitScript(
-    (session) => localStorage.setItem('animal-quiz-session-v1', JSON.stringify(session)),
-    legacy,
-  );
+  await page.addInitScript((questions) => {
+    localStorage.setItem(
+      'animal-quiz-session-v1',
+      JSON.stringify({
+        version: 1,
+        questions,
+        index: 0,
+        selected: null,
+        answers: [],
+        phase: 'answering',
+      }),
+    );
+  }, questions);
   await page.goto('/animals');
-  await expect(page.getByRole('heading', { name: 'Has completat el repte!' })).toBeVisible();
-  await expect(page.locator('.results-score')).toContainText('30Encerts');
-  await expect(page.locator('.results-score')).toContainText('100%');
+  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 55');
   const saved = await readSession(page);
-  expect(saved.questions).toHaveLength(30);
-  expect(saved.answers).toEqual(legacy.answers.slice(0, 30));
-  expect(saved.phase).toBe('completed');
-  await page.locator('.results-card').getByRole('button', { name: 'Tornar a començar' }).click();
-  await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 30');
+  expect(saved.questions).toHaveLength(55);
+  expect(new Set(saved.questions.map((question) => question.id)).size).toBe(55);
+  await expectAnimalImage(page, saved.questions[0].id);
+  expect(errors).toEqual([]);
 });
 
 test('prevents answering when a picture fails and recovers on reload', async ({ page }) => {
