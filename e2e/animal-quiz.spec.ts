@@ -117,21 +117,21 @@ test('completes exactly 30 questions, checks mixed answers and restores final re
   expect(errors).toEqual([]);
 });
 
-test('loads all 37 added animals with their Valencian names and three answer options', async ({
+test('loads only the original 55 animals with their Valencian names and three answer options', async ({
   page,
 }) => {
   test.setTimeout(120000);
   const errors = captureErrors(page);
-  const addedAnimals = ANIMALS.slice(55);
-  expect(ANIMALS).toHaveLength(92);
-  expect(addedAnimals).toHaveLength(37);
-  expect(new Set(ANIMALS.map((animal) => animal.id)).size).toBe(92);
-  expect(new Set(ANIMALS.map((animal) => animal.image)).size).toBe(92);
+  expect(ANIMALS).toHaveLength(55);
+  expect(ANIMALS[0].id).toBe('gos');
+  expect(ANIMALS[54].id).toBe('clotxina');
+  expect(new Set(ANIMALS.map((animal) => animal.id)).size).toBe(55);
+  expect(new Set(ANIMALS.map((animal) => animal.image)).size).toBe(55);
   await page.goto('/animals');
   await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 30');
 
-  for (let offset = 0; offset < addedAnimals.length; offset += 30) {
-    const targets = addedAnimals.slice(offset, offset + 30);
+  for (let offset = 0; offset < ANIMALS.length; offset += 30) {
+    const targets = ANIMALS.slice(offset, offset + 30);
     const bank = [...targets, ...ANIMALS.slice(0, 30 - targets.length)];
     const questions = bank.map((animal) => ({
       id: animal.id,
@@ -172,6 +172,58 @@ test('loads all 37 added animals with their Valencian names and three answer opt
   }
   expect(errors).toEqual([]);
 });
+
+for (const disabledEntry of ['question', 'option']) {
+  test(`replaces a saved session containing a disabled animal ${disabledEntry}`, async ({
+    page,
+  }) => {
+    const errors = captureErrors(page);
+    const questions = ANIMALS.slice(0, 30).map((animal) => ({
+      id: animal.id,
+      options: [
+        animal.name,
+        ...ANIMALS.filter((other) => other.group === animal.group && other.id !== animal.id)
+          .slice(0, 2)
+          .map((other) => other.name),
+      ],
+    }));
+    if (disabledEntry === 'question') {
+      questions[0] = { id: 'ase', options: ['l’ase', 'el gos', 'el gat'] };
+    } else {
+      questions[0].options[1] = 'l’ase';
+    }
+    await page.addInitScript((questions) => {
+      localStorage.setItem(
+        'animal-quiz-session-v1',
+        JSON.stringify({
+          version: 1,
+          questions,
+          index: 0,
+          selected: null,
+          answers: [],
+          phase: 'answering',
+        }),
+      );
+    }, questions);
+    await page.goto('/animals');
+    await expect(page.getByTestId('question-number')).toHaveText('Pregunta 1 de 30');
+    const saved = await readSession(page);
+    expect(saved.questions).toHaveLength(30);
+    for (const question of saved.questions) {
+      expect(ANIMALS.some((animal) => animal.id === question.id)).toBe(true);
+      for (const option of question.options) {
+        expect(ANIMALS.some((animal) => animal.name === option)).toBe(true);
+      }
+    }
+    await expectAnimalImage(page, saved.questions[0].id);
+    await expect(page.getByRole('button', { name: 'l’ase', exact: true })).toHaveCount(0);
+    await page.locator('.answer').first().click();
+    await page.getByRole('button', { name: 'Comprovar resposta' }).click();
+    await expect(page.getByTestId('feedback')).toBeVisible();
+    expect((await readSession(page)).answers).toHaveLength(1);
+    expect(errors).toEqual([]);
+  });
+}
 
 test('reveals the correct option after a mistake, preserves it on reload and clears it on next', async ({
   page,

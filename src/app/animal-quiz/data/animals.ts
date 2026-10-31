@@ -128,7 +128,13 @@ const ANIMAL_VOCABULARY: readonly Omit<Animal, 'image'>[] = [
   { id: 'poll', name: 'el poll', group: 'Invertebrats' },
 ];
 
-export const ANIMALS: readonly Animal[] = ANIMAL_VOCABULARY.map((animal) => ({
-  ...animal,
-  image: ANIMAL_IMAGES[animal.id],
-}));
+// Temporarily use only the original poster's 55 animals for testing.
+// Keep the 37 later additions and their illustrations available for re-enabling.
+const ACTIVE_ANIMAL_COUNT = 55;
+
+export const ANIMALS: readonly Animal[] = ANIMAL_VOCABULARY.slice(0, ACTIVE_ANIMAL_COUNT).map(
+  (animal) => ({
+    ...animal,
+    image: ANIMAL_IMAGES[animal.id],
+  }),
+);
