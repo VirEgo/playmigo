@@ -1,0 +1,241 @@
+<main class="logic-shell" lang="es-ES">
+  <header class="page-header">
+    <span class="badge">MATEMÁTICAS · 6–8 AÑOS</span>
+    <h1>Retos de lógica</h1>
+    <p>Piensa, descubre y resuelve</p>
+  </header>
+  <app-training-modes />
+  @if (store.savingUnavailable()) {
+    <p role="status">Puedes seguir jugando. Este navegador no permite guardar el progreso ahora.</p>
+  }
+  @if (activity(); as activity) {
+    <a class="back" routerLink="/logic">← Volver a los retos</a>
+    @if (store.unlocked(activity.difficulty)) {
+      @if (variant(); as variant) {
+        @if (run(); as run) {
+          <article class="quiz-card" [class.success]="run.status === 'completed'">
+            <div class="activity-meta">
+              <span
+                >Nivel {{ activity.difficulty }} · {{ levels[activity.difficulty - 1].name }}</span
+              ><span>Reto {{ activity.id.slice(-2) }} de 24</span>
+            </div>
+            <h2><app-logic-icon [name]="activity.icon" /> {{ activity.title }}</h2>
+            <p class="instructions">{{ variant.puzzle.instructions }}</p>
+            <div class="variant-tabs" aria-label="Variantes del reto">
+              @for (
+                variantOption of activity.variants;
+                track variantOption.id;
+                let index = $index
+              ) {
+                <button
+                  type="button"
+                  [attr.aria-pressed]="progress()?.variant === index"
+                  (click)="changeVariant(index)"
+                >
+                  Variante {{ index + 1 }}
+                  {{ progress()?.runs?.[variantOption.id]?.status === 'completed' ? '✓' : '' }}
+                </button>
+              }
+            </div>
+            <progress
+              [value]="
+                run.status === 'completed'
+                  ? 1
+                  : run.answer.kind === 'stages'
+                    ? run.answer.stage / 3
+                    : 0
+              "
+              max="1"
+              aria-label="Progreso de esta variante"
+            ></progress>
+            <app-logic-workspace
+              [puzzle]="variant.puzzle"
+              [answer]="run.answer"
+              [disabled]="run.status === 'completed'"
+              (changed)="store.change(activity, $event)"
+            />
+            <div aria-live="polite" aria-atomic="true">
+              @if (run.status === 'completed') {
+                <div class="feedback positive" data-testid="logic-feedback">
+                  <strong>¡Lo has conseguido!</strong>
+                  <p>{{ variant.puzzle.explanation }}</p>
+                  <p class="stars" [attr.aria-label]="run.stars + ' de 3 estrellas'">
+                    @for (earned of stars(run.stars); track $index) {
+                      <app-logic-icon name="star" [class.earned]="earned" />
+                    }
+                  </p>
+                  <p>¡Qué buena idea! Has probado y descubierto la regla.</p>
+                </div>
+              } @else if (run.wrong) {
+                <div class="feedback gentle" data-testid="logic-feedback">
+                  <strong>Vamos a probar otra vez.</strong>
+                  <p>
+                    Observa con atención.
+                    {{
+                      variant.puzzle.kind === 'stages' && run.answer.kind === 'stages'
+                        ? variant.puzzle.stages[run.answer.stage].hints[0]
+                        : variant.puzzle.hints[0]
+                    }}
+                  </p>
+                  <p>Tu respuesta sigue aquí para que puedas cambiarla.</p>
+                  <button type="button" (click)="store.retry(activity)">Reintentar</button>
+                </div>
+              }
+            </div>
+            @if (hint(); as hint) {
+              <aside class="hint" role="status">
+                <strong>Pista {{ run.hintIndex }} de 3</strong>
+                <p>{{ hint }}</p>
+              </aside>
+            }
+            <div class="actions">
+              @if (run.status !== 'completed') {
+                <button type="button" class="primary-button" (click)="store.check(activity)">
+                  {{
+                    run.answer.kind === 'stages' && run.answer.stage < 2
+                      ? 'Comprobar y abrir la siguiente sala'
+                      : 'Comprobar'
+                  }}
+                </button>
+                <button
+                  type="button"
+                  [disabled]="run.hintIndex === 3"
+                  (click)="store.hint(activity)"
+                >
+                  <app-logic-icon name="lightbulb" /> Pista {{ run.hintIndex }}/3
+                </button>
+                @if (!run.wrong) {
+                  <button type="button" (click)="store.retry(activity)">Reintentar</button>
+                }
+              } @else {
+                @if (next(); as next) {
+                  <a class="primary-button" [routerLink]="['/logic', next.id]">Siguiente reto →</a>
+                } @else {
+                  <a class="primary-button" routerLink="/logic">Volver a los retos</a>
+                }
+              }
+              <button type="button" (click)="store.restart(activity)">Reiniciar variante</button>
+            </div>
+            <details class="learning">
+              <summary>Qué practicamos</summary>
+              <p>{{ activity.objective }}</p>
+              <p>
+                Las estrellas animan a seguir: tres al resolver sin ayuda; dos con una pista o un
+                segundo intento; una con más ayuda. Todos los logros cuentan.
+              </p>
+            </details>
+          </article>
+        }
+      }
+    } @else {
+      <section class="quiz-card">
+        <h2>Un nuevo nivel te espera</h2>
+        <p>Completa cinco retos del nivel anterior, o tres sin ayuda, para abrirlo.</p>
+        <a routerLink="/logic">Elegir un reto</a>
+      </section>
+    }
+  } @else if (unknown()) {
+    <section class="quiz-card">
+      <h2>No encontramos este reto</h2>
+      <a routerLink="/logic">Volver a los retos</a>
+    </section>
+  } @else {
+    <section class="intro">
+      <app-logic-icon class="intro-icon" name="search" />
+      <div>
+        <h2>¡Activa tu curiosidad!</h2>
+        <p>
+          ¡Descubre patrones, resuelve misterios y aprende a pensar como un auténtico detective!
+        </p>
+      </div>
+    </section>
+    <section class="progress-card" aria-label="Tus descubrimientos">
+      <div>
+        <strong>{{ store.completed() }} de 24</strong><span>retos descubiertos</span>
+      </div>
+      <progress [value]="store.completed()" max="24" aria-label="Retos completados"></progress>
+      <div class="star-count">
+        <strong><app-logic-icon name="star" /> {{ store.stars() }}</strong
+        ><span>estrellas de 72</span>
+      </div>
+    </section>
+    <p class="recommendation">
+      {{ recommendation().message }}
+      <strong>Nivel recomendado: {{ levels[recommendation().level - 1].name }}.</strong>
+    </p>
+    <div class="levels" aria-label="Niveles">
+      @for (item of levels; track item.id) {
+        <button
+          type="button"
+          [attr.aria-pressed]="level() === item.id"
+          [disabled]="!store.unlocked(item.id)"
+          (click)="pickLevel(item.id)"
+        >
+          <app-logic-icon class="level-icon" [name]="item.icon" />
+          <strong>Nivel {{ item.id }}: {{ item.name }}</strong
+          ><span
+            >{{ completedIn(item.id) }}/8
+            {{ store.unlocked(item.id) ? 'retos' : '· Por descubrir' }}</span
+          >
+        </button>
+      }
+    </div>
+    <h2 class="level-heading">
+      <app-logic-icon [name]="levels[level() - 1].icon" /> {{ levels[level() - 1].name }}
+    </h2>
+    <p>{{ levels[level() - 1].description }}</p>
+    <div class="activity-grid">
+      @for (item of visibleActivities(); track item.id) {
+        <a class="activity-card" [routerLink]="['/logic', item.id]"
+          ><span class="activity-number">{{ item.id.slice(-2) }}</span
+          ><app-logic-icon class="activity-icon" [name]="item.icon" />
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.objective }}</p>
+          <span class="card-footer"
+            ><span
+              class="stars"
+              [attr.aria-label]="(store.progress(item)?.bestStars ?? 0) + ' de 3 estrellas'"
+            >
+              @for (earned of stars(store.progress(item)?.bestStars ?? 0); track $index) {
+                <app-logic-icon name="star" [class.earned]="earned" />
+              }</span
+            ><span
+              >{{
+                store.progress(item)?.bestStars
+                  ? 'Volver a jugar'
+                  : store.run(item)
+                    ? 'Continuar'
+                    : 'Descubrir'
+              }}
+              →</span
+            ></span
+          ></a
+        >
+      }
+    </div>
+    <p class="unlock-note">
+      El siguiente nivel se abre con cinco retos completados o tres resueltos sin ayuda. Puedes
+      repetir y usar pistas siempre que quieras.
+    </p>
+  }
+  <details class="adult">
+    <summary>Para adultos</summary>
+    <p>
+      La dificultad se orienta por los logros recientes y la ayuda utilizada. La edad es solo
+      orientativa. No hay límite de tiempo.
+    </p>
+    <button
+      type="button"
+      [attr.aria-pressed]="store.state().adultAccess"
+      (click)="store.setAdultAccess(!store.state().adultAccess)"
+    >
+      {{
+        store.state().adultAccess
+          ? 'Usar apertura gradual de niveles'
+          : 'Permitir todos los niveles'
+      }}
+    </button>
+    <p>El progreso se guarda en este navegador, sin datos personales.</p>
+  </details>
+  <footer>Cada idea es un paso. ¡Sigue explorando!</footer>
+</main>

@@ -44,6 +44,17 @@ testem.log
 __screenshots__/
 /e2e
 
+# Keep the logic module's regression tests with its implementation.
+!src/app/logic-challenges/*.spec.ts
+!/e2e/
+/e2e/*
+!/e2e/logic-challenges.spec.ts
+!/e2e/math-quiz.spec.ts
+!/e2e/quiz-fixture.ts
+!/e2e/pages/
+/e2e/pages/*
+!/e2e/pages/logic-pages.spec.ts
+
 # System files
 .DS_Store
 Thumbs.db

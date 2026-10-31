@@ -12,5 +12,15 @@ export const routes: Routes = [
     loadComponent: () => import('./animal-quiz/animal-quiz-page').then((m) => m.AnimalQuizPage),
     title: 'Un viatge pel món dels animals · Valencià',
   },
+  {
+    path: 'logic',
+    loadComponent: () => import('./logic-challenges/logic-page').then((m) => m.LogicPage),
+    title: 'Retos de lógica · Piensa, descubre y resuelve',
+  },
+  {
+    path: 'logic/:id',
+    loadComponent: () => import('./logic-challenges/logic-page').then((m) => m.LogicPage),
+    title: 'Retos de lógica · Un nuevo descubrimiento',
+  },
   { path: '**', redirectTo: '' },
 ];

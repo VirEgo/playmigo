@@ -1,0 +1,185 @@
+.board {
+  display: grid;
+  gap: 3px;
+  max-width: 390px;
+  margin: 24px auto;
+  background: var(--outline);
+  padding: 4px;
+  border-radius: 10px;
+}
+.cell {
+  border: none;
+  padding: 0;
+  border-radius: 3px;
+  min-width: 0;
+  min-height: 44px;
+  aspect-ratio: 1;
+  background: #fffdf5;
+  font-size: 24px;
+}
+.cell.axis {
+  border-left: 4px dashed var(--outline);
+}
+.cell.filled,
+.cell.on-path {
+  background: #b9dfd0;
+  color: #165658;
+}
+.cell.wall {
+  background: #486269;
+  color: white;
+}
+.commands button {
+  flex-grow: 1;
+}
+.program {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 70px;
+  border: 2px dashed var(--outline);
+  padding: 10px;
+  border-radius: 12px;
+}
+.machine {
+  text-align: center;
+  padding: 18px;
+  background: var(--blue);
+  border: 2px solid var(--outline);
+  border-radius: 20px;
+}
+.machine-icon {
+  font-size: 40px;
+}
+.machine p {
+  font-size: 22px;
+  font-weight: 900;
+  margin: 9px;
+}
+.machine .steps {
+  font-size: 17px;
+}
+.experiment {
+  border-bottom: 2px dashed #adc6bd;
+  text-align: center;
+  padding-bottom: 10px;
+}
+.experiment > p:last-child {
+  font-size: 24px;
+  font-weight: 900;
+}
+.code-key {
+  padding: 10px;
+  border: 2px dashed #adc6bd;
+  border-radius: 14px;
+}
+.code-key > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 140px;
+}
+.number-entry {
+  max-width: 320px;
+  margin: 24px auto 0;
+}
+.number-answer {
+  width: 100%;
+  font-size: 26px;
+  margin-bottom: 12px;
+  background: var(--blue);
+}
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.keypad button {
+  font-size: 22px;
+}
+.keypad .erase {
+  grid-column: span 2;
+  font-size: 16px;
+}
+.combination-grid {
+  display: grid;
+  gap: 8px;
+}
+.combination-grid button {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px 4px;
+}
+.combination-grid app-logic-tile {
+  flex: 1 0 50px;
+}
+.stage {
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--peach);
+  font-weight: 900;
+}
+details {
+  margin-top: 20px;
+  line-height: 1.6;
+}
+summary {
+  cursor: pointer;
+  padding: 12px 0;
+  font-weight: 800;
+  min-height: 44px;
+}
+summary:focus-visible {
+  outline: 3px solid var(--teal);
+}
+.elimination {
+  display: grid;
+  gap: 6px;
+}
+.elimination button {
+  font-size: 13px;
+  padding: 6px;
+}
+.balance {
+  border-bottom: 6px solid var(--outline);
+  transform: rotate(-2deg);
+  transition: transform 0.3s;
+  background: var(--peach);
+}
+.balance app-logic-tile {
+  max-width: 100%;
+}
+.balance.balanced {
+  transform: rotate(0);
+}
+@media (max-width: 480px) {
+  .tile-button {
+    flex-basis: 105px;
+  }
+  .targets {
+    gap: 6px;
+  }
+  .target {
+    font-size: 13px;
+    padding: 12px 4px;
+  }
+  .order {
+    gap: 7px;
+  }
+  .order-card {
+    min-width: 0;
+  }
+  .sequence {
+    gap: 8px;
+  }
+  .sequence app-logic-tile {
+    max-width: 78px;
+  }
+  .venn {
+    gap: 0;
+  }
+}

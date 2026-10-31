@@ -30,7 +30,12 @@ if (build.status !== 0) process.exit(build.status ?? 1);
 const output = 'dist/github-pages/browser';
 // Pages has no SPA rewrite support. Give every known route a real entry file.
 // Keep this list in sync with src/app/app.routes.ts when adding routes.
-for (const route of ['animals', 'math']) {
+for (const route of [
+  'animals',
+  'math',
+  'logic',
+  ...Array.from({ length: 24 }, (_, i) => `logic/logic-${String(i + 1).padStart(2, '0')}`),
+]) {
   await mkdir(`${output}/${route}`, { recursive: true });
   await copyFile(`${output}/index.html`, `${output}/${route}/index.html`);
 }

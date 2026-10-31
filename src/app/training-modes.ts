@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { LucideCalculator, LucidePawPrint } from '@lucide/angular';
+import { LucideCalculator, LucidePawPrint, LucideSearch } from '@lucide/angular';
 
 @Component({
   selector: 'app-training-modes',
-  imports: [RouterLink, RouterLinkActive, LucideCalculator, LucidePawPrint],
+  imports: [RouterLink, RouterLinkActive, LucideCalculator, LucidePawPrint, LucideSearch],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <nav [attr.aria-label]="label()">
@@ -24,6 +24,9 @@ import { LucideCalculator, LucidePawPrint } from '@lucide/angular';
         lang="ca-valencia"
       >
         <svg lucidePawPrint aria-hidden="true"></svg>Animals · Valencià
+      </a>
+      <a routerLink="/logic" routerLinkActive="active" ariaCurrentWhenActive="page" lang="es">
+        <svg lucideSearch aria-hidden="true"></svg>Retos de lógica
       </a>
     </nav>
   `,

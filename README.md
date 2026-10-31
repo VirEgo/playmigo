@@ -113,6 +113,12 @@ Comprueba imágenes, enlaces directos, recarga, progreso independiente y ajustes
 
 ## Organización
 
+### Retos de lógica
+
+La navegación incluye **Retos de lógica — Piensa, descubre y resuelve**, en `/logic`, con 24 actividades originales en español de España y 74 variantes. Incluye patrones, clasificación, conjuntos, simetría, máquinas, deducción, caminos y combinaciones. Guarda respuestas parciales y logros en `logic-challenges-v1`, sin modificar las sesiones existentes. Los tres niveles se abren por progreso, con acceso libre desde «Para adultos».
+
+No necesita imágenes adicionales: usa figuras SVG, bloques CSS e iconos Lucide con etiquetas visibles. Las rutas `/logic/logic-01` a `/logic/logic-24` también se generan para enlaces directos en GitHub Pages. Consulta [la arquitectura, progresión y pruebas del módulo](docs/logic-challenges.md).
+
 - `src/app/math-quiz/question-generator.ts`: genera y valida 50 preguntas. Distribución: 10 sumas, 10 restas, 10 multiplicaciones, 5 divisiones, 5 comparaciones, 5 problemas y 5 de geometría/medidas. `data/math-questions.ts` conserva el banco anterior para migrar sesiones y los conceptos de geometría.
 - `local-model.ts`, `proxy.conf.cjs` y `scripts/serve-local.mjs`: integración opcional con LM Studio y servidor de previsualización local.
 - `math-question.ts` y `quiz-state.ts`: modelos tipados.
@@ -130,6 +136,6 @@ No se solicita el nombre ni se guardan datos personales. El progreso queda en es
 
 ## Referencia visual y alcance
 
-La referencia es https://temps-verbal.my.canva.site/. Se conservan la composición de una sola columna, la tarjeta crema, los bordes y sombras turquesas y las respuestas pastel. Se adapta el idioma y contenido a matemáticas. La pantalla inicial para introducir el nombre se omite según el flujo solicitado. Se usan iconos SVG de Lucide; no hay emojis.
+La referencia es https://temps-verbal.my.canva.site/. Se conservan la composición de una sola columna, la tarjeta crema, los bordes y sombras turquesas y las respuestas pastel. Se adapta el idioma y contenido a matemáticas. La pantalla inicial para introducir el nombre se omite según el flujo solicitado. Los modos usan iconos SVG de Lucide; los retos de lógica añaden figuras SVG y bloques CSS con etiquetas visibles.
 
 Consulta `docs/verification.md` para ver los resultados y las diferencias intencionales. No incluye backend, cuentas, analítica ni sincronización entre dispositivos. La publicación en GitHub Pages se configura mediante el workflow descrito arriba.

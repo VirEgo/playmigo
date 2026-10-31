@@ -1,0 +1,534 @@
+@let p = puzzle();
+@let a = answer();
+@switch (p.kind) {
+  @case ('choice') {
+    @if (a.kind === 'choice') {
+      @if (p.equations) {
+        @for (equation of p.equations; track $index) {
+          <div
+            class="sequence balance"
+            [class.balanced]="disabled()"
+            aria-label="Balanza de frutas"
+          >
+            @for (fruit of equation.left; track fruit.id; let last = $last) {
+              <app-logic-tile [tile]="fruit" />
+              @if (!last) {
+                <strong>+</strong>
+              }
+            }
+            <strong>= {{ equation.total }}</strong>
+          </div>
+        }
+      }
+      @if (p.display.length) {
+        <div
+          class="sequence"
+          [class.balance]="p.balance"
+          [class.balanced]="p.balance && disabled()"
+          aria-label="Pistas visuales"
+        >
+          @for (item of p.display; track item.id) {
+            <app-logic-tile [tile]="item" />
+          }
+          @if (!p.balance) {
+            <span class="question" aria-label="Figura o número que falta">?</span>
+          }
+        </div>
+      }
+      <div class="choices" aria-label="Opciones">
+        @for (item of p.options; track item.id) {
+          <button
+            type="button"
+            class="tile-button"
+            [attr.data-choice]="item.id"
+            [attr.aria-pressed]="a.value === item.id"
+            [disabled]="disabled()"
+            (click)="choose(item.id)"
+          >
+            <app-logic-tile [tile]="item" />
+          </button>
+        }
+      </div>
+      @if (p.reasons) {
+        <p class="prompt">¿Por qué es diferente?</p>
+        <div class="choices">
+          @for (item of p.reasons; track item.id) {
+            <button
+              type="button"
+              [attr.data-reason]="item.id"
+              [attr.aria-pressed]="a.reason === item.id"
+              [disabled]="disabled()"
+              (click)="reason(item.id)"
+            >
+              {{ item.label }}
+            </button>
+          }
+        </div>
+      }
+    }
+  }
+  @case ('selection') {
+    @if (a.kind === 'selection') {
+      <p class="helper">Puedes marcar más de una. Toca otra vez para quitar la marca.</p>
+      <div class="choices">
+        @for (item of p.items; track item.id) {
+          <button
+            type="button"
+            class="tile-button"
+            [attr.data-select]="item.id"
+            [attr.aria-pressed]="a.values.includes(item.id)"
+            [disabled]="disabled()"
+            (click)="toggle(item.id)"
+          >
+            <app-logic-tile [tile]="item" /><span aria-hidden="true">{{
+              a.values.includes(item.id) ? '✓' : '○'
+            }}</span>
+          </button>
+        }
+      </div>
+    }
+  }
+  @case ('placement') {
+    @if (a.kind === 'placement') {
+      @if (p.clues.length) {
+        <ul class="clues">
+          @for (clue of p.clues; track $index) {
+            <li>{{ clue }}</li>
+          }
+        </ul>
+      }
+      <p class="helper">
+        Arrastra una ficha a su lugar o selecciónala y toca el lugar. Con el teclado: Tab y Espacio.
+      </p>
+      <div class="choices">
+        @for (item of p.items; track item.id) {
+          <button
+            type="button"
+            class="tile-button"
+            [attr.data-item]="item.id"
+            [draggable]="!disabled()"
+            (dragstart)="startDrag($event, item.id)"
+            [attr.aria-pressed]="selected() === item.id"
+            [disabled]="disabled()"
+            (click)="selected.set(item.id)"
+          >
+            <app-logic-tile [tile]="item" /><span class="placement">{{
+              placementLabel(item.id)
+            }}</span>
+          </button>
+        }
+      </div>
+      <div
+        class="targets"
+        [class.venn]="p.layout === 'venn'"
+        aria-label="Lugares para colocar las fichas"
+      >
+        @for (target of p.targets; track target.id) {
+          <button
+            type="button"
+            class="target"
+            [attr.data-target]="target.id"
+            [disabled]="disabled()"
+            (dragover)="allowDrop($event)"
+            (drop)="drop($event, target.id)"
+            (click)="place(target.id)"
+          >
+            <strong>{{ target.label }}</strong>
+            <span class="occupants">
+              @for (item of assigned(target.id); track item.id) {
+                <app-logic-tile [tile]="item" />
+              } @empty {
+                <span>Coloca aquí</span>
+              }
+            </span>
+          </button>
+        }
+      </div>
+      @if (p.layout === 'logic') {
+        <details>
+          <summary>Tabla para descartar (opcional)</summary>
+          <p>
+            Marca con × las parejas que no pueden ir juntas. Estas marcas no cambian tu respuesta.
+          </p>
+          <div
+            class="elimination"
+            [style.grid-template-columns]="'repeat(' + p.targets.length + ', minmax(0, 1fr))'"
+          >
+            @for (item of p.items; track item.id) {
+              @for (target of p.targets; track target.id) {
+                @let key = item.id + ':' + target.id;
+                <button
+                  type="button"
+                  [attr.aria-pressed]="excluded().includes(key)"
+                  [disabled]="disabled()"
+                  (click)="exclude(key)"
+                >
+                  {{ item.label }} · {{ target.label }} {{ excluded().includes(key) ? '×' : '○' }}
+                </button>
+              }
+            }
+          </div>
+        </details>
+      }
+    }
+  }
+  @case ('order') {
+    @if (a.kind === 'order') {
+      @if (p.clues.length) {
+        <ul class="clues">
+          @for (clue of p.clues; track $index) {
+            <li>{{ clue }}</li>
+          }
+        </ul>
+      }
+      <p class="helper">Arrastra las fichas o usa las flechas para moverlas.</p>
+      <div class="order">
+        @for (item of ordered(); track item.id; let i = $index) {
+          <div
+            class="order-card"
+            [attr.data-order]="item.id"
+            [draggable]="!disabled()"
+            (dragstart)="startDrag($event, item.id)"
+            (dragover)="allowDrop($event)"
+            (drop)="dropOrder($event, item.id)"
+          >
+            <span class="position">{{ i + 1 }}</span
+            ><app-logic-tile [tile]="item" />
+            <div class="move">
+              <button
+                type="button"
+                [disabled]="disabled() || i === 0"
+                [attr.aria-label]="'Mover ' + item.label + ' a la izquierda'"
+                (click)="move(item.id, -1)"
+              >
+                ←</button
+              ><button
+                type="button"
+                [disabled]="disabled() || i === ordered().length - 1"
+                [attr.aria-label]="'Mover ' + item.label + ' a la derecha'"
+                (click)="move(item.id, 1)"
+              >
+                →
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+  @case ('symmetry') {
+    @if (a.kind === 'symmetry') {
+      <p class="helper">La línea vertical es el espejo. Solo cambian las casillas de la derecha.</p>
+      <div
+        class="board"
+        [style.grid-template-columns]="'repeat(' + p.size + ', 1fr)'"
+        aria-label="Cuadrícula del espejo"
+      >
+        @for (cell of gridCells(); track cell) {
+          <button
+            type="button"
+            class="cell"
+            [class.axis]="cell % p.size === p.size / 2"
+            [class.filled]="p.given.includes(cell) || a.values.includes(cell)"
+            [attr.data-cell]="cell"
+            [attr.aria-label]="
+              'Fila ' +
+              (1 + (cell - (cell % p.size)) / p.size) +
+              ', columna ' +
+              ((cell % p.size) + 1)
+            "
+            [attr.aria-pressed]="p.given.includes(cell) || a.values.includes(cell)"
+            [disabled]="disabled() || cell % p.size < p.size / 2"
+            (click)="mirror(cell)"
+          >
+            {{ p.given.includes(cell) || a.values.includes(cell) ? '●' : '' }}
+          </button>
+        }
+      </div>
+    }
+  }
+  @case ('grid') {
+    @if (a.kind === 'grid') {
+      <p class="helper">
+        <app-logic-icon name="flag" /> Salida · <app-logic-icon name="star" /> Meta ·
+        <app-logic-icon name="wall" /> Muro.
+        {{
+          p.mode === 'path'
+            ? 'Toca la última casilla anterior para retroceder.'
+            : 'Cada flecha avanza una casilla.'
+        }}
+      </p>
+      <div
+        class="board"
+        [style.grid-template-columns]="'repeat(' + p.size + ', 1fr)'"
+        aria-label="Tablero del camino"
+      >
+        @for (cell of gridCells(); track cell) {
+          <button
+            type="button"
+            class="cell"
+            [attr.data-cell]="cell"
+            [class.wall]="p.blocked.includes(cell)"
+            [class.on-path]="gridPath().includes(cell)"
+            [attr.aria-label]="cellLabel(p, cell)"
+            [disabled]="disabled() || p.mode === 'robot' || p.blocked.includes(cell)"
+            (click)="extendPath(cell)"
+          >
+            @if (cell === gridPath().at(-1) && p.mode === 'robot') {
+              <app-logic-icon name="bot" />
+            } @else if (cell === p.goal) {
+              <app-logic-icon name="star" />
+            } @else if (cell === p.start) {
+              <app-logic-icon name="flag" />
+            } @else if (p.blocked.includes(cell)) {
+              <app-logic-icon name="wall" />
+            } @else if (gridPath().includes(cell)) {
+              <span aria-hidden="true">●</span>
+            }
+          </button>
+        }
+      </div>
+      @if (p.mode === 'robot') {
+        <div class="choices commands">
+          @for (direction of directions; track direction.id) {
+            <button
+              type="button"
+              [attr.data-command]="direction.id"
+              [disabled]="disabled() || a.commands.length >= 40"
+              (click)="addCommand(direction.id)"
+            >
+              {{ direction.icon }} {{ direction.label }}
+            </button>
+          }
+        </div>
+        <p class="helper">Tu programa (toca un paso para borrarlo):</p>
+        <div class="program">
+          @for (command of a.commands; track $index; let i = $index) {
+            <button
+              type="button"
+              [disabled]="disabled()"
+              [attr.aria-label]="'Borrar paso ' + (i + 1) + ': ' + directionLabel(command)"
+              (click)="removeCommand(i)"
+            >
+              {{
+                directions[
+                  command === 'up' ? 0 : command === 'down' ? 1 : command === 'left' ? 2 : 3
+                ].icon
+              }}
+            </button>
+          } @empty {
+            <span>Añade una flecha para empezar.</span>
+          }
+        </div>
+        <div class="choices">
+          <button type="button" [disabled]="disabled() || !a.commands.length" (click)="execute()">
+            Ejecutar</button
+          ><button type="button" [disabled]="disabled()" (click)="clearGrid()">
+            Borrar programa
+          </button>
+        </div>
+        @if (executed()) {
+          <p role="status">
+            {{
+              !robotResult().valid
+                ? 'El robot se ha detenido: hay un muro o el borde. Cambia las flechas.'
+                : robotResult().path.at(-1) === p.goal
+                  ? '¡El robot ha llegado! Pulsa Comprobar.'
+                  : 'El robot ha avanzado. Añade pasos hasta la estrella.'
+            }}
+          </p>
+        }
+      } @else {
+        <div class="choices">
+          <button type="button" [disabled]="disabled() || a.path.length < 2" (click)="undoPath()">
+            Deshacer paso</button
+          ><button type="button" [disabled]="disabled()" (click)="clearGrid()">
+            Borrar camino
+          </button>
+        </div>
+      }
+      <p role="status">{{ notice() }}</p>
+    }
+  }
+  @case ('machine') {
+    @if (a.kind === 'machine') {
+      <div class="machine">
+        <app-logic-icon class="machine-icon" name="settings" />
+        @for (example of p.examples; track example) {
+          <p>{{ example }} → {{ steps(example).at(-1) }}</p>
+        }
+        @if (p.showSteps) {
+          <p class="steps">
+            Entrada
+            @for (step of p.steps; track $index) {
+              → {{ step.operation === 'add' ? (step.value > 0 ? '+' : '−') : '×' }}
+              {{ step.value < 0 ? -step.value : step.value }}
+            }
+            → Salida
+          </p>
+        }
+      </div>
+      <div class="experiment">
+        <p><strong>Laboratorio:</strong> prueba una entrada.</p>
+        <div class="choices">
+          @for (value of [1, 2, 3, 4, 5, 6]; track value) {
+            <button
+              type="button"
+              [attr.aria-pressed]="trial() === value"
+              [disabled]="disabled()"
+              (click)="trial.set(value)"
+            >
+              {{ value }}
+            </button>
+          }
+        </div>
+        <p aria-live="polite">
+          {{ trial() }} →
+          {{ p.showSteps ? steps(trial()).slice(1).join(' → ') : steps(trial()).at(-1) }}
+        </p>
+      </div>
+      <p class="prompt">¿Qué hace la máquina?</p>
+      <div class="choices">
+        @for (ruleOption of p.rules; track ruleOption.id) {
+          <button
+            type="button"
+            [attr.data-rule]="ruleOption.id"
+            [attr.aria-pressed]="a.rule === ruleOption.id"
+            [disabled]="disabled()"
+            (click)="rule(ruleOption.id)"
+          >
+            {{ ruleOption.label }}
+          </button>
+        }
+      </div>
+      <p class="prompt">Si entra el {{ p.input }}, ¿qué número sale?</p>
+      <div class="choices">
+        @for (value of p.options; track value) {
+          <button
+            type="button"
+            [attr.data-number]="value"
+            [attr.aria-pressed]="a.value === value"
+            [disabled]="disabled()"
+            (click)="predict(value)"
+          >
+            {{ value }}
+          </button>
+        }
+      </div>
+    }
+  }
+  @case ('code') {
+    <div class="choices code-key">
+      @for (entry of p.key; track entry.tile.id) {
+        <span
+          ><app-logic-tile [tile]="entry.tile" /> = <strong>{{ entry.value }}</strong></span
+        >
+      }
+    </div>
+    <div class="sequence">
+      @for (term of p.terms; track $index; let last = $last) {
+        @for (entry of p.key; track entry.tile.id) {
+          @if (entry.tile.id === term) {
+            <app-logic-tile [tile]="entry.tile" />
+          }
+        }
+        @if (!last) {
+          <strong>+</strong>
+        }
+      }
+    </div>
+    <details>
+      <summary>Ver la suma paso a paso</summary>
+      <p>Cambia las figuras por números:</p>
+      <p>
+        @for (term of p.terms; track $index; let last = $last) {
+          @for (entry of p.key; track entry.tile.id) {
+            @if (entry.tile.id === term) {
+              {{ entry.value }}
+            }
+          }
+          @if (!last) {
+            +
+          }
+        }
+        = ?
+      </p>
+      <p>Suma dos números y después añade el tercero.</p>
+    </details>
+  }
+  @case ('combinations') {
+    @if (a.kind === 'combinations') {
+      <div
+        class="combination-grid"
+        [style.grid-template-columns]="'repeat(' + p.shirts.length + ', minmax(0, 1fr))'"
+      >
+        @for (hat of p.hats; track hat.id) {
+          @for (shirt of p.shirts; track shirt.id) {
+            <button
+              type="button"
+              [attr.data-combination]="hat.id + ':' + shirt.id"
+              [attr.aria-pressed]="a.values.includes(hat.id + ':' + shirt.id)"
+              [disabled]="disabled()"
+              (click)="combine(hat.id, shirt.id)"
+            >
+              <app-logic-tile [tile]="hat" /><span>+</span><app-logic-tile [tile]="shirt" /><span>{{
+                a.values.includes(hat.id + ':' + shirt.id) ? '✓' : '○'
+              }}</span>
+            </button>
+          }
+        }
+      </div>
+      <p class="prompt">Has construido {{ a.values.length }} conjuntos. ¿Cuántos hay en total?</p>
+    }
+  }
+  @case ('stages') {
+    @if (a.kind === 'stages') {
+      @let stage = p.stages[a.stage];
+      <p class="stage">
+        Sala {{ a.stage + 1 }} de {{ p.stages.length }} ·
+        {{ a.stage === 0 ? 'La llave' : a.stage === 1 ? 'La puerta' : 'El tesoro' }}
+      </p>
+      <p class="prompt">{{ stage.instructions }}</p>
+      <div class="sequence">
+        @for (item of stage.display; track item.id) {
+          <app-logic-tile [tile]="item" />
+        }
+      </div>
+      <div class="choices">
+        @for (item of stage.options; track item.id) {
+          <button
+            type="button"
+            class="tile-button"
+            [attr.data-choice]="item.id"
+            [attr.aria-pressed]="a.values[a.stage] === item.id"
+            [disabled]="disabled()"
+            (click)="stageChoice(item.id)"
+          >
+            <app-logic-tile [tile]="item" />
+          </button>
+        }
+      </div>
+    }
+  }
+}
+@if (a.kind === 'code' || a.kind === 'combinations') {
+  <div class="number-entry">
+    <button
+      type="button"
+      class="number-answer"
+      aria-label="Respuesta numérica. Usa las teclas de números para escribir."
+      [disabled]="disabled()"
+      (keydown)="numberKey($event)"
+    >
+      {{ (a.kind === 'code' ? a.value : a.total) || '¿Cuánto?' }}
+    </button>
+    <div class="keypad">
+      @for (digit of ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']; track digit) {
+        <button type="button" [disabled]="disabled()" (click)="keypad(digit)">{{ digit }}</button>
+      }
+      <button type="button" class="erase" [disabled]="disabled()" (click)="keypad('erase')">
+        Borrar cifra
+      </button>
+    </div>
+  </div>
+}
